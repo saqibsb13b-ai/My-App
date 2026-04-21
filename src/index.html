@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WealthOS — Personal Finance Manager</title>
+  <link rel="stylesheet" href="src/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="loginScreen" class="screen active">
+  <div class="login-bg">
+    <div class="grid-overlay"></div>
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+  </div>
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-icon">₿</div>
+      <h1>WealthOS</h1>
+      <p>Your private financial command center</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="password">🔑 Password</button>
+      <button class="auth-tab" data-tab="face">👤 Face ID</button>
+      <button class="auth-tab" data-tab="finger">🔒 Biometric</button>
+    </div>
+    <div class="auth-panel active" id="tab-password">
+      <div class="input-group">
+        <label>Full Name</label>
+        <input type="text" id="loginName" placeholder="Enter your name" autocomplete="name" />
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="loginPass" placeholder="Enter password" autocomplete="current-password" />
+          <button class="eye-btn" onclick="togglePw()">👁</button>
+        </div>
+      </div>
+      <div class="input-group">
+        <label>PIN (4 digits)</label>
+        <input type="password" id="loginPin" placeholder="••••" maxlength="4" pattern="\d{4}" />
+      </div>
+      <button class="btn-primary" onclick="loginPassword()">Unlock WealthOS</button>
+      <p class="hint">First time? This will create your account.</p>
+    </div>
+    <div class="auth-panel" id="tab-face">
+      <div class="camera-box">
+        <video id="faceVideo" autoplay muted playsinline></video>
+        <canvas id="faceCanvas"></canvas>
+        <div class="camera-frame"></div>
+        <div id="faceStatus" class="face-status">Click Start to activate camera</div>
+      </div>
+      <button class="btn-primary" onclick="startFaceAuth()">Start Face Scan</button>
+      <p class="hint">Requires password login first to register face.</p>
+    </div>
+    <div class="auth-panel" id="tab-finger">
+      <div class="bio-icon">
+        <div class="fingerprint-anim">
+          <svg viewBox="0 0 100 100" class="fp-svg">
+            <path class="fp-line fp1" d="M50,15 C30,15 15,30 15,50"/>
+            <path class="fp-line fp2" d="M50,20 C33,20 20,33 20,50"/>
+            <path class="fp-line fp3" d="M50,25 C36,25 25,36 25,50"/>
+            <path class="fp-line fp4" d="M50,30 C39,30 30,39 30,50"/>
+            <path class="fp-line fp5" d="M50,35 C42,35 35,42 35,50"/>
+            <path class="fp-line fp1" d="M50,15 C70,15 85,30 85,50"/>
+            <path class="fp-line fp2" d="M50,20 C67,20 80,33 80,50"/>
+            <path class="fp-line fp3" d="M50,25 C64,25 75,36 75,50"/>
+            <path class="fp-line fp4" d="M50,30 C61,30 70,39 70,50"/>
+            <path class="fp-line fp5" d="M50,35 C58,35 65,42 65,50"/>
+            <path class="fp-line fp3" d="M35,50 C35,63 42,72 50,72"/>
+            <path class="fp-line fp4" d="M40,50 C40,61 44,68 50,68"/>
+            <path class="fp-line fp5" d="M45,50 C45,59 47,63 50,63"/>
+            <path class="fp-line fp3" d="M65,50 C65,63 58,72 50,72"/>
+            <path class="fp-line fp4" d="M60,50 C60,61 56,68 50,68"/>
+            <path class="fp-line fp5" d="M55,50 C55,59 53,63 50,63"/>
+          </svg>
+        </div>
+      </div>
+      <div id="bioStatus" class="bio-status">Touch ID / Windows Hello Ready</div>
+      <button class="btn-primary" onclick="startBioAuth()">Authenticate with Biometrics</button>
+      <p class="hint">Uses your device's built-in fingerprint / face sensor.</p>
+    </div>
+    <div id="loginError" class="error-msg"></div>
+  </div>
+</div>
+
+<div id="appScreen" class="screen">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon-sm">₿</div>
+      <span>WealthOS</span>
+    </div>
+    <div class="user-badge" id="userBadge">
+      <div class="avatar" id="avatarEl">S</div>
+      <div>
+        <div class="uname" id="displayName">User</div>
+        <div class="ustatus">Secure Session</div>
+      </div>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#" class="nav-link active" data-page="dashboard">📊 Dashboard</a></li>
+      <li><a href="#" class="nav-link" data-page="income">💰 Income & Salary</a></li>
+      <li><a href="#" class="nav-link" data-page="investments">📈 Investments</a></li>
+      <li><a href="#" class="nav-link" data-page="expenses">💸 Expenses</a></li>
+      <li><a href="#" class="nav-link" data-page="savings">🏦 Savings</a></li>
+      <li><a href="#" class="nav-link" data-page="charges">🧾 Monthly Charges</a></li>
+      <li><a href="#" class="nav-link" data-page="reports">📋 Reports</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <button class="btn-export" onclick="exportData()">⬇ Export Data</button>
+      <button class="btn-import" onclick="document.getElementById('importFile').click()">⬆ Import Data</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)" />
+      <button class="btn-logout" onclick="logout()">🔓 Lock App</button>
+    </div>
+  </nav>
+  <header class="mobile-header">
+    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    <span>WealthOS</span>
+    <button onclick="logout()" style="background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer">🔓</button>
+  </header>
+  <main class="main-content">
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <h2>Dashboard</h2>
+        <span id="dashDate" class="date-badge"></span>
+      </div>
+      <div class="summary-cards" id="summaryCards"></div>
+      <div class="charts-row">
+        <div class="chart-card"><h3>Monthly Overview</h3><canvas id="overviewChart"></canvas></div>
+        <div class="chart-card"><h3>Expense Breakdown</h3><canvas id="pieChart"></canvas></div>
+      </div>
+      <div class="recent-section">
+        <h3>Recent Transactions</h3>
+        <div id="recentList" class="txn-list"></div>
+      </div>
+    </div>
+    <div class="page" id="page-income">
+      <div class="page-header"><h2>Income & Salary</h2><button class="btn-add" onclick="openModal('income')">+ Add Income</button></div>
+      <div id="incomeList" class="record-list"></div>
+    </div>
+    <div class="page" id="page-investments">
+      <div class="page-header"><h2>Investments</h2><button class="btn-add" onclick="openModal('investment')">+ Add Investment</button></div>
+      <div id="investmentList" class="record-list"></div>
+    </div>
+    <div class="page" id="page-expenses">
+      <div class="page-header"><h2>Expenses</h2><button class="btn-add" onclick="openModal('expense')">+ Add Expense</button></div>
+      <div id="expenseList" class="record-list"></div>
+    </div>
+    <div class="page" id="page-savings">
+      <div class="page-header"><h2>Savings Goals</h2><button class="btn-add" onclick="openModal('saving')">+ Add Saving</button></div>
+      <div id="savingList" class="record-list"></div>
+    </div>
+    <div class="page" id="page-charges">
+      <div class="page-header"><h2>Monthly Charges</h2><button class="btn-add" onclick="openModal('charge')">+ Add Charge</button></div>
+      <div id="chargeList" class="record-list"></div>
+    </div>
+    <div class="page" id="page-reports">
+      <div class="page-header"><h2>Reports & Analytics</h2></div>
+      <div id="reportsContent"></div>
+    </div>
+  </main>
+</div>
+
+<div id="modalOverlay" class="modal-overlay" onclick="closeModal(event)">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="modalTitle">Add Record</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+<script src="src/app.js"></script>
+</body>
+</html>
